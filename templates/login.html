@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header><h1>🔐 SecureAuth 2FA</h1></header>
+    <nav>
+      <a href="{{ url_for('home') }}" class="nav-btn">Home</a>
+      <a href="{{ url_for('register') }}" class="nav-btn">Register</a>
+      <a href="{{ url_for('login') }}" class="nav-btn active">Login</a>
+      {% if session.get('username') == 'MEESHA123' %}
+      <a href="{{ url_for('admin') }}" class="nav-btn">Admin</a>
+      {% endif %}
+    </nav>
+
+    <div class="page">
+      <h2>Login</h2>
+      <form method="POST" action="{{ url_for('login') }}">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      {% if message %}
+        <div class="result {{ 'error' if error else 'success' }}">{{ message }}</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

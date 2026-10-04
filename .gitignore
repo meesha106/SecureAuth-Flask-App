@@ -1,0 +1,14 @@
+# Secrets
+.env
+
+# Database and logs (contain user data)
+users.db
+*.db
+login_attempts.log
+*.log
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/

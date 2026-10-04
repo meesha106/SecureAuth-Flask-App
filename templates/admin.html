@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .logout-btn {
+      background-color: #d9534f;
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 20px;
+      transition: 0.3s;
+    }
+    .logout-btn:hover {
+      background-color: #c9302c;
+    }
+    #logsBox {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Admin Dashboard</h1>
+      <p>Monitor login attempts, failed logins, and account lockouts</p>
+    </header>
+
+    <nav>
+      <a href="{{ url_for('home') }}" class="nav-btn">Home</a>
+      <a href="{{ url_for('admin') }}" class="nav-btn active">Dashboard</a>
+    </nav>
+
+    <div class="page">
+      <h2>User Security Status</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Failed Attempts</th>
+            <th>Lockout Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email or '-' }}</td>
+            <td>{{ user.failed_attempts }}</td>
+            <td>
+              {% if user.lockout_until and user.lockout_until > now %}
+                🔒 Locked ({{ ((user.lockout_until - now) // 60) }} min left)
+              {% else %}
+                ✅ Active
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('lock_user', username=user.username) }}">
+                <button type="submit">
+                  {% if user.lockout_until and user.lockout_until > now %}Unlock{% else %}Lock{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if not users %}
+      <p>No user data available yet.</p>
+      {% endif %}
+
+      <h2>Login Attempt Logs</h2>
+      <div id="logsBox">
+        {% if logs %}
+          {% for line in logs %}
+          <div>{{ line }}</div>
+          {% endfor %}
+        {% else %}
+          <p>No log entries yet.</p>
+        {% endif %}
+      </div>
+
+      <!-- CHART SECTION -->
+      <h2>📊 Security Analytics</h2>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <canvas id="loginChart" width="400" height="200"></canvas>
+        <canvas id="lockChart" width="400" height="200" style="margin-top: 30px;"></canvas>
+        <p id="lastUpdated" style="font-size: 14px; color: #666; margin-top: 10px;"></p>
+      </div>
+
+      <!-- Logout Button -->
+      <div style="text-align: center;">
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+console.log("Page fully loaded — initializing charts...");
+
+async function refreshToken() {
+  try {
+    const res = await fetch("/refresh", { method: "POST", credentials: "include" });
+    if (res.ok) {
+      console.log("🔄 Token refreshed successfully");
+      return true;
+    } else {
+      console.warn("⚠️ Token refresh failed, user may need to re-login");
+      return false;
+    }
+  } catch (err) {
+    console.error("Token refresh error:", err);
+    return false;
+  }
+}
+
+async function loadCharts() {
+  try {
+    const res = await fetch("/admin_stats", {
+      method: "GET",
+      credentials: "include",
+      headers: { "Accept": "application/json" }
+    });
+
+    // If token expired, refresh and retry
+    if (res.status === 401) {
+      console.warn("🔒 Token expired, attempting refresh...");
+      const refreshed = await refreshToken();
+      if (refreshed) return loadCharts();
+      alert("⚠️ Session expired. Please log in again.");
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Chart data received:", data);
+
+    const ctx1 = document.getElementById('loginChart')?.getContext('2d');
+    const ctx2 = document.getElementById('lockChart')?.getContext('2d');
+    if (!ctx1 || !ctx2) {
+      console.warn("Canvas not ready yet. Retrying...");
+      return setTimeout(loadCharts, 500);
+    }
+
+    // Safely destroy existing charts
+    if (window.loginChart?.destroy) window.loginChart.destroy();
+    if (window.lockChart?.destroy) window.lockChart.destroy();
+
+    // ✅ Login Attempts Chart
+    window.loginChart = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: ['Successful Logins', 'Failed Logins'],
+        datasets: [{
+          data: [data.success, data.failed],
+          backgroundColor: ['#28a745', '#dc3545'],
+          borderRadius: 8
+        }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // ✅ Lockout Chart
+    window.lockChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Active Users', 'Locked Users'],
+        datasets: [{
+          data: [data.total_users - data.locked_users, data.locked_users],
+          backgroundColor: ['#007bff', '#ffc107']
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    document.getElementById('lastUpdated').textContent =
+      "Last updated: " + new Date().toLocaleTimeString();
+
+  } catch (err) {
+    console.error("Chart load error:", err);
+  }
+}
+
+// Run after full page load
+window.addEventListener("load", () => {
+  loadCharts();
+  setInterval(loadCharts, 60000);
+});
+</script>
+<script>
+async function refreshTokenIfNeeded() {
+  try {
+    const res = await fetch("/refresh", { method: "POST", credentials: "include" });
+    if (res.ok) {
+      console.log("🔄 Token refreshed successfully before admin action");
+      return true;
+    } else {
+      console.warn("⚠️ Token refresh failed");
+      return false;
+    }
+  } catch (err) {
+    console.error("Error refreshing token:", err);
+    return false;
+  }
+}
+
+// Intercept all lock/unlock form submissions
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("form[action*='lock_user']").forEach(form => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const refreshed = await refreshTokenIfNeeded();
+      if (!refreshed) {
+        alert("Session expired. Please log in again.");
+        window.location.href = "/login";
+        return;
+      }
+      form.submit(); // Proceed with the real submission
+    });
+  });
+});
+</script>
+</body>
+</html>
+

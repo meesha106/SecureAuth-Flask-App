@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Registered</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header><h1>Account created ✅</h1></header>
+    <div class="page">
+      <p><strong>Username:</strong> {{ username }}</p>
+
+      <p><strong>TOTP secret (save this in your authenticator):</strong></p>
+      <p style="word-break:break-all;">{{ secret }}</p>
+
+      <p><strong>Manual TOTP URL:</strong></p>
+      <p style="word-break:break-all;">{{ totp_url }}</p>
+
+      {% if qr_code %}
+      <p><strong>Scan this QR code with your authenticator app:</strong></p>
+      <img src="data:image/png;base64,{{ qr_code }}" alt="TOTP QR Code">
+      {% endif %}
+
+      {% if recovery_codes %}
+      <p><strong>Backup Recovery Codes (Save these securely! Each code can be used only once):</strong></p>
+      <ul>
+        {% for code in recovery_codes %}
+          <li style="word-break:break-all;">{{ code }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <p>Now open your authenticator app (Google Authenticator / Authy) and add the account using the secret, manual URL, or scan the QR code. Then <a href="{{ url_for('login') }}">login</a> and enter the 6-digit code on the verify page.</p>
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,52 @@
+<script>
+  // ====== CONFIG ======
+  // Must match the expiry time set in app.py
+  // e.g. timedelta(minutes=10) → 10 * 60 * 1000
+  const sessionDuration = 10 * 60 * 1000; // 10 minutes
+  const warningTime = sessionDuration - 30 * 1000; // show warning 30 sec before expiry
+
+  // ====== CREATE WARNING POPUP ======
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.bottom = '20px';
+  popup.style.right = '20px';
+  popup.style.background = '#fff3cd';
+  popup.style.color = '#856404';
+  popup.style.padding = '12px 18px';
+  popup.style.borderRadius = '8px';
+  popup.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+  popup.style.fontFamily = 'Arial';
+  popup.style.fontSize = '14px';
+  popup.style.display = 'none';
+  document.body.appendChild(popup);
+
+  // ====== TIMER LOGIC ======
+  const startTime = Date.now();
+  const countdownEl = document.getElementById('session-timer'); // from dashboard HTML
+
+  const updateTimer = () => {
+    const elapsed = Date.now() - startTime;
+    const remaining = sessionDuration - elapsed;
+
+    if (remaining <= 0) {
+      popup.innerHTML = '🔒 Session expired. Redirecting to login...';
+      popup.style.display = 'block';
+      setTimeout(() => (window.location.href = '/logout'), 3000);
+      clearInterval(timerInterval);
+      return;
+    }
+
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    // Show warning popup 30 sec before expiry
+    if (remaining <= 30000 && popup.style.display === 'none') {
+      popup.innerHTML = '⚠️ Your session will expire in 30 seconds.';
+      popup.style.display = 'block';
+    }
+  };
+
+  const timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+</script>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f6fa;
+    }
+    .container {
+      width: 480px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    header h1 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .info {
+      font-size: 16px;
+      margin: 10px 0;
+      color: #444;
+    }
+    .token-status {
+      background: #e6ffe6;
+      color: #090;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .logout-btn {
+      background-color: #d9534f;
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+    .logout-btn:hover {
+      background-color: #c9302c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>👤 Welcome, {{ user }}</h1>
+      <p>Your 2FA session is active and protected.</p>
+    </header>
+
+    <div class="page">
+      <div class="token-status">
+        ✅ Secure Session Active (expires in <span id="session-timer">00:30</span>)
+
+      </div>
+
+      <p class="info">You are successfully logged in using SecureAuth’s Two-Factor Authentication.</p>
+      <p class="info">For enhanced security, your session will automatically (expires in <span id="session-timer">00:30</span>) of inactivity.</p>
+
+      <br>
+      <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+  </div>
+  <script>
+  // Match session time from app.py (30 seconds for demo)
+  const sessionDuration = 30 * 1000;  // ← change to 10*60*1000 for 10 minutes
+  const warningTime = sessionDuration - 5000; // show warning 5s before expiry
+
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.bottom = '20px';
+  popup.style.right = '20px';
+  popup.style.background = '#fff3cd';
+  popup.style.color = '#856404';
+  popup.style.padding = '12px 18px';
+  popup.style.borderRadius = '8px';
+  popup.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+  popup.style.fontFamily = 'Arial';
+  popup.style.fontSize = '14px';
+  popup.style.display = 'none';
+  document.body.appendChild(popup);
+
+  const startTime = Date.now();
+  const countdownEl = document.getElementById('session-timer');
+
+  function updateTimer() {
+    const elapsed = Date.now() - startTime;
+    const remaining = sessionDuration - elapsed;
+
+    if (remaining <= 0) {
+      popup.innerHTML = '🔒 Session expired. Redirecting to login...';
+      popup.style.display = 'block';
+      setTimeout(() => (window.location.href = '/logout'), 2000);
+      clearInterval(timerInterval);
+      return;
+    }
+
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    if (remaining <= 5000 && popup.style.display === 'none') {
+      popup.innerHTML = '⚠️ Your session will expire in 5 seconds.';
+      popup.style.display = 'block';
+    }
+  }
+
+  const timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+</script>
+</body>
+</html>
+

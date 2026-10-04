@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Verify Code</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f3f6fa; }
+    .container { width: 400px; margin: 80px auto; background: white; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); text-align: center; }
+    header h1 { margin-bottom: 15px; color: #333; }
+    input[type="text"] { width: 80%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    button { background-color: #007bff; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.3s; }
+    button:hover { background-color: #0056b3; }
+    .result { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 14px; }
+    .result.error { background-color: #ffe6e6; color: #c00; }
+    .result.success { background-color: #e6ffe6; color: #090; }
+    a { text-decoration: none; color: #007bff; }
+    a:hover { text-decoration: underline; }
+    .proceed-btn { margin-top: 15px; display: inline-block; background-color: #28a745; color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; transition: 0.3s; }
+    .proceed-btn:hover { background-color: #218838; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header><h1>2FA Verification</h1></header>
+    <div class="page">
+      <form method="POST" action="{{ url_for('verify') }}">
+        <input type="text" name="totp" placeholder="Enter TOTP / Email OTP / Backup Code" required>
+        <br>
+        <button type="submit">Verify</button>
+      </form>
+
+      <form method="POST" action="{{ url_for('verify') }}" style="margin-top: 10px;">
+        <button name="send_email" value="1" type="submit">Send Email OTP</button>
+      </form>
+
+      {% if message %}
+        <div class="result {{ 'error' if error else 'success' }}">{{ message }}</div>
+        {% if not error %}
+          <a href="{{ url_for('home') }}" class="proceed-btn">Proceed to Home</a>
+        {% endif %}
+      {% endif %}
+
+      <p style="margin-top: 15px;"><a href="{{ url_for('login') }}">Back to Login</a></p>
+    </div>
+  </div>
+</body>
+</html>
+

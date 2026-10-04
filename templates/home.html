@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureAuth 2FA - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 SecureAuth 2FA</h1>
+            <p>Multi-Factor Authentication System</p>
+        </header>
+
+        <nav>
+            <a href="{{ url_for('home') }}" class="nav-btn {% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="{{ url_for('register') }}" class="nav-btn {% if request.path == '/register' %}active{% endif %}">Register</a>
+            <a href="{{ url_for('login') }}" class="nav-btn {% if request.path == '/login' %}active{% endif %}">Login</a>
+
+            {% if session.get('username') == 'MEESHA123' %}
+            <a href="{{ url_for('admin') }}" class="nav-btn {% if request.path == '/admin' %}active{% endif %}">Admin</a>
+            {% endif %}
+        </nav>
+
+        <div class="page">
+            <h2>Welcome</h2>
+            <p>This is a secure multi-factor authentication demo project.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
